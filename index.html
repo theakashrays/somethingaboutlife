@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                background: #008080 url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect fill="%23008080" width="32" height="32"/><rect fill="%23106666" x="0" y="0" width="16" height="16"/><rect fill="%23106666" x="16" y="16" width="16" height="16"/></svg>');
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-family: 'MS Sans Serif', Arial, sans-serif;
+            }
+
+            .window {
+                position: absolute;
+                width: 400px;
+                background: #c0c0c0;
+                border: 2px outset #dfdfdf;
+                border-right-color: #808080;
+                border-bottom-color: #808080;
+                overflow: hidden;
+                box-shadow: 1px 1px 0 white inset, -1px -1px 0 #dfdfdf inset;
+            }
+
+            .window.dragging {
+                opacity: 0.95;
+            }
+
+            .title-bar {
+                background: linear-gradient(90deg, #000080, #1084d7);
+                color: white;
+                padding: 2px 2px 2px 4px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: move;
+                user-select: none;
+                font-weight: bold;
+                font-size: 13px;
+                height: 20px;
+            }
+
+            .window-controls {
+                display: flex;
+                gap: 2px;
+            }
+
+            .window-btn {
+                width: 16px;
+                height: 14px;
+                border: 2px outset #c0c0c0;
+                background: #c0c0c0;
+                color: black;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: bold;
+                padding: 0;
+                transition: none;
+            }
+
+            .window-btn:active {
+                border-style: inset;
+            }
+
+            .content {
+                padding: 4px;
+                background: #c0c0c0;
+            }
+
+            .content h1 {
+                color: #000;
+                margin-bottom: 10px;
+                font-size: 16px;
+                font-weight: bold;
+            }
+
+            .content p {
+                color: #000;
+                margin-bottom: 15px;
+                line-height: 1.4;
+                font-size: 13px;
+            }
+
+            .content button {
+                background: #c0c0c0;
+                color: black;
+                border: 2px outset #dfdfdf;
+                border-right-color: #808080;
+                border-bottom-color: #808080;
+                padding: 4px 12px;
+                cursor: pointer;
+                font-size: 12px;
+                font-family: 'MS Sans Serif', Arial, sans-serif;
+                box-shadow: 1px 1px 0 white inset, -1px -1px 0 #dfdfdf inset;
+                min-width: 75px;
+                height: 23px;
+            }
+
+            .content button:active {
+                border-style: inset;
+                box-shadow: -1px -1px 0 white inset, 1px 1px 0 #808080 inset;
+            }
+
+            .content button:hover:not(:active) {
+                border-style: outset;
+            }
+
+            .modal-content {
+                font-size: 13px;
+                line-height: 1.6;
+                color: #000;
+                min-height: 150px;
+                position: relative;
+                padding-right: 120px;
+            }
+
+            .modal-image {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                width: 100px;
+                height: 100px;
+                border: 2px outset #dfdfdf;
+                border-right-color: #808080;
+                border-bottom-color: #808080;
+            }
+
+            .animated-text {
+                opacity: 0;
+                animation: typewriter 3s steps(250, end) forwards;
+            }
+
+            @keyframes typewriter {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+
+            .button-group {
+                display: flex;
+                gap: 8px;
+                margin-top: 15px;
+            }
+
+            .desktop-icon {
+                position: absolute;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 3px;
+                cursor: pointer;
+                user-select: none;
+                padding: 3px;
+                width: 70px;
+            }
+
+            .desktop-icon img {
+                width: 48px;
+                height: 48px;
+                filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.5));
+            }
+
+            .desktop-icon-label {
+                color: white;
+                font-size: 11px;
+                text-align: center;
+                font-weight: bold;
+                text-shadow: 1px 1px 2px black;
+                max-width: 70px;
+                word-wrap: break-word;
+            }
+
+            .clippy-image {
+                width: 80px;
+                height: 80px;
+            }
+
+            .media-player-window {
+                width: 300px;
+                background: #c0c0c0;
+            }
+
+            .media-player-content {
+                padding: 4px;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .media-display {
+                background: #000;
+                color: #00ff00;
+                padding: 8px;
+                font-family: 'MS Sans Serif', Arial, sans-serif;
+                font-size: 11px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px inset #808080;
+                border-right-color: #dfdfdf;
+                border-bottom-color: #dfdfdf;
+                font-weight: bold;
+            }
+
+            .media-buttons {
+                display: flex;
+                gap: 2px;
+                justify-content: center;
+            }
+
+            .media-btn {
+                width: 28px;
+                height: 25px;
+                background: #c0c0c0;
+                border: 2px outset #dfdfdf;
+                border-right-color: #808080;
+                border-bottom-color: #808080;
+                color: black;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: bold;
+                padding: 0;
+            }
+
+            .media-btn:active {
+                border-style: inset;
+            }
+
+            .media-slider {
+                width: 100%;
+                height: 14px;
+                border: 2px inset #808080;
+                border-right-color: #dfdfdf;
+                border-bottom-color: #dfdfdf;
+                background: linear-gradient(90deg, #1a472a 0%, #2d5f3f 25%, #00aa44 50%, #2d5f3f 75%, #1a472a 100%);
+                cursor: pointer;
+            }
+
+            .media-cover {
+                width: 260px;
+                height: 150px;
+                border: 2px inset #808080;
+                border-right-color: #dfdfdf;
+                border-bottom-color: #dfdfdf;
+                background: #000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            }
+
+            .media-cover img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            .media-label {
+                font-size: 11px;
+                color: #000;
+                text-align: center;
+                margin: 2px 0;
+                font-family: 'MS Sans Serif', Arial, sans-serif;
+            }
+
+            .media-audio {
+                display: none;
+            }
+
+            .typing-text {
+                opacity: 0;
+                animation: typewriter 4s steps(400, end) forwards;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }
+
+            .about-image {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                width: 80px;
+                height: 80px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="window" id="window">
+            <div class="title-bar" id="titleBar">
+                <span>My Window</span>
+                <div class="window-controls">
+                    <button class="window-btn" id="minimizeBtn">−</button>
+                    <button class="window-btn" id="maximizeBtn">□</button>
+                    <button class="window-btn close-btn" id="closeBtn">✕</button>
+                </div>
+            </div>
+            <div class="content">
+                <h1>Hello there.</h1>
+                <p>Just something I made when I was bored, you can drag the windows by the title bar to adjust the position.</p>
+                <button type="button">Click me!</button>
+                <button type="button" id="aboutMeBtn" style="margin-top: 8px;">About Me</button>
+            </div>
+        </div>
+
+        <script>
+            const windowEl = document.getElementById('window');
+            const titleBar = document.getElementById('titleBar');
+            const closeBtn = document.getElementById('closeBtn');
+            const minimizeBtn = document.getElementById('minimizeBtn');
+            const maximizeBtn = document.getElementById('maximizeBtn');
+            const clickMeBtn = document.querySelector('.content button');
+            const aboutMeBtn = document.getElementById('aboutMeBtn');
+
+            let isMaximized = false;
+            let isDragging = false;
+            let dragOffsetX, dragOffsetY;
+            let windowCount = 0;
+            let popupCount = 0;
+
+            // Position window on load - centered horizontally, a bit from top
+            function centerWindowTop() {
+                const windowWidth = windowEl.offsetWidth;
+                const viewportWidth = window.innerWidth;
+                const left = (viewportWidth - windowWidth) / 2;
+                windowEl.style.left = left + 'px';
+                windowEl.style.top = '80px';
+            }
+            
+            window.addEventListener('load', centerWindowTop);
+            centerWindowTop();
+
+            // Create desktop icons
+            function createDesktopIcons() {
+                // Much Love icon
+                const icon1 = document.createElement('div');
+                icon1.className = 'desktop-icon';
+                icon1.style.left = '15px';
+                icon1.style.top = '10px';
+                
+                icon1.innerHTML = `
+                    <img src="assets/images/much_love.png" alt="My Love">
+                    <div class="desktop-icon-label">Much Love</div>
+                `;
+                
+                icon1.addEventListener('dblclick', () => {
+                    createPopupMessage('Much Love', '❤️ Thank you for clicking me!');
+                });
+                
+                document.body.appendChild(icon1);
+
+                // Media Player icon
+                const icon2 = document.createElement('div');
+                icon2.className = 'desktop-icon';
+                icon2.style.left = '15px';
+                icon2.style.top = '120px';
+                
+                icon2.innerHTML = `
+                    <img src="assets/images/wmediaplayer.png" alt="Media Player">
+                    <div class="desktop-icon-label">Media Player</div>
+                `;
+                
+                icon2.addEventListener('dblclick', () => {
+                    createMediaPlayerWindow();
+                });
+                
+                document.body.appendChild(icon2);
+
+                // Paint/Dog icon
+                const icon3 = document.createElement('div');
+                icon3.className = 'desktop-icon';
+                icon3.style.left = '15px';
+                icon3.style.top = '230px';
+                
+                icon3.innerHTML = `
+                    <img src="assets/images/paint.webp" alt="Dog">
+                    <div class="desktop-icon-label">Dog</div>
+                `;
+                
+                icon3.addEventListener('dblclick', () => {
+                    createDogWindow();
+                });
+                
+                document.body.appendChild(icon3);
+            }
+
+            createDesktopIcons();
+
+            // Dragging functionality
+            titleBar.addEventListener('mousedown', (e) => {
+                if (e.target === closeBtn || e.target === minimizeBtn || e.target === maximizeBtn) {
+                    return;
+                }
+                isDragging = true;
+                windowEl.classList.add('dragging');
+                
+                dragOffsetX = e.clientX - windowEl.offsetLeft;
+                dragOffsetY = e.clientY - windowEl.offsetTop;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging && !isMaximized) {
+                    windowEl.style.left = (e.clientX - dragOffsetX) + 'px';
+                    windowEl.style.top = (e.clientY - dragOffsetY) + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                windowEl.classList.remove('dragging');
+            });
+
+            // Close button
+            closeBtn.addEventListener('click', () => {
+                windowEl.style.opacity = '0';
+                windowEl.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    windowEl.style.display = 'none';
+                }, 200);
+            });
+
+            // Minimize button
+            minimizeBtn.addEventListener('click', () => {
+                windowEl.style.height = '0';
+                windowEl.querySelector('.content').style.display = 'none';
+            });
+
+            // Maximize button
+            let maxOriginalPos = null;
+            maximizeBtn.addEventListener('click', () => {
+                if (!isMaximized) {
+                    maxOriginalPos = { x: windowEl.offsetLeft, y: windowEl.offsetTop };
+                    windowEl.style.left = '0';
+                    windowEl.style.top = '0';
+                    windowEl.style.width = '100vw';
+                    windowEl.style.height = '100vh';
+                    isMaximized = true;
+                } else {
+                    windowEl.style.left = maxOriginalPos.x + 'px';
+                    windowEl.style.top = maxOriginalPos.y + 'px';
+                    windowEl.style.width = '400px';
+                    windowEl.style.height = 'auto';
+                    isMaximized = false;
+                }
+            });
+
+            // Click Me button - Open new window
+            clickMeBtn.addEventListener('click', () => {
+                createMessageWindow();
+            });
+
+            // About Me button
+            aboutMeBtn.addEventListener('click', () => {
+                createAboutMeWindow();
+            });
+
+            function createMessageWindow() {
+                windowCount++;
+                const offsetX = 100 + (windowCount * 30);
+                const offsetY = 100 + (windowCount * 30);
+
+                const newWindow = document.createElement('div');
+                newWindow.className = 'window';
+                newWindow.style.left = offsetX + 'px';
+                newWindow.style.top = offsetY + 'px';
+                newWindow.style.width = '500px';
+                
+                const newTitleBar = document.createElement('div');
+                newTitleBar.className = 'title-bar';
+                newTitleBar.innerHTML = '<span>Message Box</span><div class="window-controls"><button class="window-btn minimize-new">−</button><button class="window-btn maximize-new">□</button><button class="window-btn close-btn-new">✕</button></div>';
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'content';
+                contentDiv.style.position = 'relative';
+                contentDiv.style.minHeight = '250px';
+
+                const animatedText = document.createElement('p');
+                animatedText.className = 'animated-text';
+                animatedText.innerHTML = 'Hey, you probably stumbled across this web page from my bio, hope you are having a lovely day, things can be hard but they always never remain the same. Wish you all the best!<br><br><strong>-Clippy.</strong>';
+                const img = document.createElement('img');
+                img.src = 'assets/images/clippy.webp';
+                img.className = 'clippy-image';
+                img.style.position = 'absolute';
+                img.style.bottom = '10px';
+                img.style.right = '10px';
+                img.style.opacity = '0';
+                img.style.animation = 'typewriter 3s steps(250, end) forwards 1s';
+
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'button-group';
+                buttonGroup.style.opacity = '0';
+                buttonGroup.style.animation = 'typewriter 0.5s forwards 3s';
+
+                const thanksBtn = document.createElement('button');
+                thanksBtn.textContent = 'Thanks';
+                thanksBtn.className = 'content button';
+                thanksBtn.style.marginTop = '0';
+
+                const whatBtn = document.createElement('button');
+                whatBtn.textContent = 'What is this website?';
+                whatBtn.className = 'content button';
+                whatBtn.style.marginTop = '0';
+
+                buttonGroup.appendChild(thanksBtn);
+                buttonGroup.appendChild(whatBtn);
+
+                contentDiv.appendChild(animatedText);
+                contentDiv.appendChild(img);
+                contentDiv.appendChild(buttonGroup);
+
+                newWindow.appendChild(newTitleBar);
+                newWindow.appendChild(contentDiv);
+                document.body.appendChild(newWindow);
+
+                // Make new window draggable
+                makeWindowDraggable(newWindow, newTitleBar);
+
+                // Close button for new window
+                newWindow.querySelector('.close-btn-new').addEventListener('click', () => {
+                    newWindow.style.opacity = '0';
+                    setTimeout(() => newWindow.remove(), 200);
+                });
+
+                // Minimize button for new window
+                newWindow.querySelector('.minimize-new').addEventListener('click', () => {
+                    contentDiv.style.display = contentDiv.style.display === 'none' ? 'block' : 'none';
+                    newWindow.style.height = contentDiv.style.display === 'none' ? '20px' : 'auto';
+                });
+
+                // Maximize button for new window
+                newWindow.querySelector('.maximize-new').addEventListener('click', () => {
+                    if (newWindow.style.width !== '100vw') {
+                        newWindow.style.left = '0';
+                        newWindow.style.top = '0';
+                        newWindow.style.width = '100vw';
+                        newWindow.style.height = '100vh';
+                    } else {
+                        newWindow.style.left = offsetX + 'px';
+                        newWindow.style.top = offsetY + 'px';
+                        newWindow.style.width = '500px';
+                        newWindow.style.height = 'auto';
+                    }
+                });
+
+                // Button click handlers - show popup windows instead of alerts
+                thanksBtn.addEventListener('click', () => {
+                    createPopupMessage('Thanks!', 'You are welcome! 😊');
+                });
+
+                whatBtn.addEventListener('click', () => {
+                    createPopupMessage('About', 'This is a personal website created with love and nostalgia!');
+                });
+            }
+
+            function createPopupMessage(title, message) {
+                popupCount++;
+                const offsetX = 300 + (popupCount * 20);
+                const offsetY = 200 + (popupCount * 20);
+
+                const popup = document.createElement('div');
+                popup.className = 'window';
+                popup.style.left = offsetX + 'px';
+                popup.style.top = offsetY + 'px';
+                popup.style.width = '350px';
+
+                const popupTitleBar = document.createElement('div');
+                popupTitleBar.className = 'title-bar';
+                popupTitleBar.innerHTML = `<span>${title}</span><div class="window-controls"><button class="window-btn popup-close">✕</button></div>`;
+
+                const popupContent = document.createElement('div');
+                popupContent.className = 'content';
+                popupContent.innerHTML = `<p>${message}</p>`;
+
+                const closeButton = document.createElement('button');
+                closeButton.className = 'content button';
+                closeButton.textContent = 'Close';
+                closeButton.style.marginTop = '10px';
+
+                popupContent.appendChild(closeButton);
+
+                popup.appendChild(popupTitleBar);
+                popup.appendChild(popupContent);
+                document.body.appendChild(popup);
+
+                // Make popup draggable
+                makeWindowDraggable(popup, popupTitleBar);
+
+                // Close handlers
+                const closePopup = () => {
+                    popup.style.opacity = '0';
+                    setTimeout(() => popup.remove(), 200);
+                };
+
+                popup.querySelector('.popup-close').addEventListener('click', closePopup);
+                closeButton.addEventListener('click', closePopup);
+            }
+
+            function createMediaPlayerWindow() {
+                windowCount++;
+                const centerX = (window.innerWidth - 300) / 2;
+                const centerY = (window.innerHeight - 300) / 2;
+
+                const mediaWindow = document.createElement('div');
+                mediaWindow.className = 'window media-player-window';
+                mediaWindow.style.left = centerX + 'px';
+                mediaWindow.style.top = centerY + 'px';
+
+                const titleBar = document.createElement('div');
+                titleBar.className = 'title-bar';
+                titleBar.innerHTML = '<span>Windows Media Player</span><div class="window-controls"><button class="window-btn mp-close">✕</button></div>';
+
+                const content = document.createElement('div');
+                content.className = 'media-player-content';
+
+                // Cover art
+                const cover = document.createElement('div');
+                cover.className = 'media-cover';
+                const coverImg = document.createElement('img');
+                coverImg.src = 'assets/images/coverpage_player.jpg';
+                cover.appendChild(coverImg);
+
+                // Audio element
+                const audio = document.createElement('audio');
+                audio.className = 'media-audio';
+                audio.src = 'assets/audio/xxxtentacion.mp3';
+                audio.volume = 0.7;
+
+                const display = document.createElement('div');
+                display.className = 'media-display';
+                display.textContent = '00:00 / 00:00';
+
+                const slider = document.createElement('div');
+                slider.className = 'media-slider';
+
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'media-buttons';
+
+                const btnStop = document.createElement('button');
+                btnStop.className = 'media-btn';
+                btnStop.textContent = '⏹';
+                btnStop.title = 'Stop';
+                btnStop.addEventListener('click', () => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    btnPlay.textContent = '▶';
+                    display.textContent = '00:00 / ' + formatTime(audio.duration);
+                });
+
+                const btnPlay = document.createElement('button');
+                btnPlay.className = 'media-btn';
+                btnPlay.textContent = '▶';
+                btnPlay.title = 'Play';
+                btnPlay.addEventListener('click', () => {
+                    if (audio.paused) {
+                        audio.play();
+                        btnPlay.textContent = '⏸';
+                    } else {
+                        audio.pause();
+                        btnPlay.textContent = '▶';
+                    }
+                });
+
+                const btnNext = document.createElement('button');
+                btnNext.className = 'media-btn';
+                btnNext.textContent = '⏭';
+                btnNext.title = 'Next';
+                btnNext.addEventListener('click', () => {
+                    audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+                });
+
+                // Update display time
+                audio.addEventListener('loadedmetadata', () => {
+                    display.textContent = '00:00 / ' + formatTime(audio.duration);
+                });
+
+                audio.addEventListener('timeupdate', () => {
+                    display.textContent = formatTime(audio.currentTime) + ' / ' + formatTime(audio.duration);
+                });
+
+                audio.addEventListener('ended', () => {
+                    btnPlay.textContent = '▶';
+                });
+
+                slider.addEventListener('click', (e) => {
+                    const rect = slider.getBoundingClientRect();
+                    const percent = (e.clientX - rect.left) / rect.width;
+                    audio.currentTime = percent * audio.duration;
+                });
+
+                buttonGroup.appendChild(btnStop);
+                buttonGroup.appendChild(btnPlay);
+                buttonGroup.appendChild(btnNext);
+
+                const label = document.createElement('div');
+                label.className = 'media-label';
+                label.textContent = 'Now Playing: xxxtentacion.mp3';
+
+                content.appendChild(cover);
+                content.appendChild(display);
+                content.appendChild(slider);
+                content.appendChild(buttonGroup);
+                content.appendChild(label);
+
+                mediaWindow.appendChild(titleBar);
+                mediaWindow.appendChild(content);
+                mediaWindow.appendChild(audio);
+                document.body.appendChild(mediaWindow);
+
+                // Make draggable
+                makeWindowDraggable(mediaWindow, titleBar);
+
+                // Close button
+                mediaWindow.querySelector('.mp-close').addEventListener('click', () => {
+                    audio.pause();
+                    mediaWindow.style.opacity = '0';
+                    setTimeout(() => mediaWindow.remove(), 200);
+                });
+            }
+
+            function formatTime(seconds) {
+                if (isNaN(seconds)) return '00:00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+            }
+
+            function createAboutMeWindow() {
+                popupCount++;
+                const offsetX = 200 + (popupCount * 20);
+                const offsetY = 150 + (popupCount * 20);
+
+                const aboutWindow = document.createElement('div');
+                aboutWindow.className = 'window';
+                aboutWindow.style.left = offsetX + 'px';
+                aboutWindow.style.top = offsetY + 'px';
+                aboutWindow.style.width = '450px';
+
+                const titleBar = document.createElement('div');
+                titleBar.className = 'title-bar';
+                titleBar.innerHTML = '<span>About Me</span><div class="window-controls"><button class="window-btn about-close">✕</button></div>';
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'content';
+                contentDiv.style.position = 'relative';
+                contentDiv.style.minHeight = '280px';
+                contentDiv.style.paddingRight = '100px';
+
+                const aboutText = document.createElement('p');
+                aboutText.className = 'typing-text';
+                aboutText.innerHTML = `So, I currently am persuing a degree at a university,\nI like to code- i mostly spend my time making pointless projects and taking in ocassional favors from people. I dont feel very nice around much people.\nI like to be alone most of the times.\nThere is not much i can tell you about myself , lets keep things that way :)`;
+
+                const mailImg = document.createElement('img');
+                mailImg.src = 'assets/images/Mail.webp';
+                mailImg.className = 'about-image';
+                mailImg.style.opacity = '0';
+                mailImg.style.animation = 'typewriter 4s steps(400, end) forwards 2s';
+
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'button-group';
+                buttonGroup.style.opacity = '0';
+                buttonGroup.style.animation = 'typewriter 0.5s forwards 4s';
+
+                const whyBtn = document.createElement('button');
+                whyBtn.textContent = 'Why alone?';
+                whyBtn.className = 'content button';
+                whyBtn.style.marginTop = '0';
+
+                const coolBtn = document.createElement('button');
+                coolBtn.textContent = 'Cool';
+                coolBtn.className = 'content button';
+                coolBtn.style.marginTop = '0';
+
+                buttonGroup.appendChild(whyBtn);
+                buttonGroup.appendChild(coolBtn);
+
+                contentDiv.appendChild(aboutText);
+                contentDiv.appendChild(mailImg);
+                contentDiv.appendChild(buttonGroup);
+
+                aboutWindow.appendChild(titleBar);
+                aboutWindow.appendChild(contentDiv);
+                document.body.appendChild(aboutWindow);
+
+                // Make draggable
+                makeWindowDraggable(aboutWindow, titleBar);
+
+                // Close button
+                aboutWindow.querySelector('.about-close').addEventListener('click', () => {
+                    aboutWindow.style.opacity = '0';
+                    setTimeout(() => aboutWindow.remove(), 200);
+                });
+
+                // Cool button - close window
+                coolBtn.addEventListener('click', () => {
+                    aboutWindow.style.opacity = '0';
+                    setTimeout(() => aboutWindow.remove(), 200);
+                });
+
+                // Why alone? button
+                whyBtn.addEventListener('click', () => {
+                    createWhyAloneWindow();
+                });
+            }
+
+            function createWhyAloneWindow() {
+                popupCount++;
+                const offsetX = 300 + (popupCount * 20);
+                const offsetY = 200 + (popupCount * 20);
+
+                const whyWindow = document.createElement('div');
+                whyWindow.className = 'window';
+                whyWindow.style.left = offsetX + 'px';
+                whyWindow.style.top = offsetY + 'px';
+                whyWindow.style.width = '350px';
+
+                const titleBar = document.createElement('div');
+                titleBar.className = 'title-bar';
+                titleBar.innerHTML = '<span>Why Alone?</span><div class="window-controls"><button class="window-btn why-close">✕</button></div>';
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'content';
+                contentDiv.innerHTML = '<p>I just like it that way.</p>';
+
+                const okayBtn = document.createElement('button');
+                okayBtn.className = 'content button';
+                okayBtn.textContent = 'Okay.';
+                okayBtn.style.marginTop = '10px';
+
+                contentDiv.appendChild(okayBtn);
+
+                whyWindow.appendChild(titleBar);
+                whyWindow.appendChild(contentDiv);
+                document.body.appendChild(whyWindow);
+
+                // Make draggable
+                makeWindowDraggable(whyWindow, titleBar);
+
+                // Close handlers
+                const closeWindow = () => {
+                    whyWindow.style.opacity = '0';
+                    setTimeout(() => whyWindow.remove(), 200);
+                };
+
+                whyWindow.querySelector('.why-close').addEventListener('click', closeWindow);
+                okayBtn.addEventListener('click', closeWindow);
+            }
+
+            function createDogWindow() {
+                popupCount++;
+                const centerX = (window.innerWidth - 400) / 2;
+                const centerY = (window.innerHeight - 350) / 2;
+
+                const dogWindow = document.createElement('div');
+                dogWindow.className = 'window';
+                dogWindow.style.left = centerX + 'px';
+                dogWindow.style.top = centerY + 'px';
+                dogWindow.style.width = '400px';
+
+                const titleBar = document.createElement('div');
+                titleBar.className = 'title-bar';
+                titleBar.innerHTML = '<span>Dog</span><div class="window-controls"><button class="window-btn dog-close">✕</button></div>';
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'content';
+                contentDiv.style.position = 'relative';
+                contentDiv.style.display = 'flex';
+                contentDiv.style.flexDirection = 'column';
+                contentDiv.style.alignItems = 'center';
+                contentDiv.style.gap = '10px';
+                contentDiv.style.padding = '10px';
+
+                const text = document.createElement('p');
+                text.textContent = 'Here is a picture of a dog, his name is Oreo :)';
+                text.style.textAlign = 'center';
+                text.style.marginBottom = '10px';
+
+                const dogImg = document.createElement('img');
+                dogImg.src = 'assets/images/dog.webp';
+                dogImg.style.maxWidth = '100%';
+                dogImg.style.maxHeight = '250px';
+                dogImg.style.border = '2px inset #808080';
+                dogImg.style.borderRightColor = '#dfdfdf';
+                dogImg.style.borderBottomColor = '#dfdfdf';
+
+                contentDiv.appendChild(text);
+                contentDiv.appendChild(dogImg);
+
+                dogWindow.appendChild(titleBar);
+                dogWindow.appendChild(contentDiv);
+                document.body.appendChild(dogWindow);
+
+                // Make draggable
+                makeWindowDraggable(dogWindow, titleBar);
+
+                // Close button
+                dogWindow.querySelector('.dog-close').addEventListener('click', () => {
+                    dogWindow.style.opacity = '0';
+                    setTimeout(() => dogWindow.remove(), 200);
+                });
+            }
+
+            function makeWindowDraggable(windowEl, titleBar) {
+                let isDragging = false;
+                let dragOffsetX, dragOffsetY;
+
+                titleBar.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('window-btn')) {
+                        return;
+                    }
+                    isDragging = true;
+                    windowEl.classList.add('dragging');
+                    dragOffsetX = e.clientX - windowEl.offsetLeft;
+                    dragOffsetY = e.clientY - windowEl.offsetTop;
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging && windowEl.style.width !== '100vw') {
+                        windowEl.style.left = (e.clientX - dragOffsetX) + 'px';
+                        windowEl.style.top = (e.clientY - dragOffsetY) + 'px';
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    windowEl.classList.remove('dragging');
+                });
+            }
+        </script>
+    </body>
+</html>
